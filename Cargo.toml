@@ -1,0 +1,12 @@
+[package]
+name = "octree"
+version = "0.1.0"
+authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+description = "Bounded octree for spatial partitioning."
+documentation = "https://docs.rs/octree"
+repository = "https://github.com/Nercury/octree-rs"
+readme = "README.md"
+keywords = ["octree", "cg", "spatial", "collision"]
+categories = ["data-structures", "game-engines"]
+license = "MIT OR Apache-2.0"
+maintenance = { status = "passively-maintained" }
