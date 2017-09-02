@@ -10,3 +10,7 @@ keywords = ["octree", "cg", "spatial", "collision"]
 categories = ["data-structures", "game-engines"]
 license = "MIT OR Apache-2.0"
 maintenance = { status = "passively-maintained" }
+
+[dependencies]
+cgmath = "0.10"
+collision = "0.8"
