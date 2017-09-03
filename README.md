@@ -3,6 +3,18 @@
 [![Version](https://img.shields.io/crates/v/octree.svg)](https://crates.io/crates/octree)
 [![Build Status](https://travis-ci.org/Nercury/octree-rs.svg?branch=master)](https://travis-ci.org/Nercury/octree-rs)
 
+## Repository structure
+
+This repository is structured a bit differently. The root
+project is an example project, while the octree library
+itself can be found under `octree-lib`.
+
+To run example, simply clone this repo and run:
+
+```bash
+cargo run --release
+```
+
 ## Installation
 
 In your `Cargo.toml`, add:
