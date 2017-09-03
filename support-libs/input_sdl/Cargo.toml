@@ -1,0 +1,9 @@
+[package]
+name = "input_sdl"
+version = "0.1.0"
+authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+publish = false
+
+[dependencies]
+input = { path = "../input" }
+sdl2 = "0.30"

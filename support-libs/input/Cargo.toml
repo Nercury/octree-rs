@@ -1,0 +1,8 @@
+[package]
+name = "input"
+version = "0.1.0"
+authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+publish = false
+
+[dependencies]
+sdl2 = "0.30"

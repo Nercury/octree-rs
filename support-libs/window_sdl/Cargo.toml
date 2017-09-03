@@ -1,0 +1,14 @@
+[package]
+name = "window_sdl"
+version = "0.1.0"
+authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+
+[dependencies]
+window = { path = "../window" }
+window_gl = { path = "../window_gl" }
+resources = { path = "../resources" }
+input = { path = "../input" }
+input_sdl = { path = "../input_sdl" }
+sdl2 = "0.30"
+log = "0.3"
+gl-core-struct = { git = "https://github.com/Nercury/gl-core-struct-rs" }

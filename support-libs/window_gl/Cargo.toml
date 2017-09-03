@@ -1,0 +1,9 @@
+[package]
+name = "window_gl"
+version = "0.1.0"
+authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+publish = false
+
+[dependencies]
+window = { path = "../window" }
+gl-core-struct = { git = "https://github.com/Nercury/gl-core-struct-rs" }

@@ -1,0 +1,9 @@
+[package]
+name = "bundler"
+version = "0.1.0"
+authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+
+[dependencies]
+walkdir = "1.0"
+bincode = "0.6"
+rustc-serialize = "0.3"

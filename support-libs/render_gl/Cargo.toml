@@ -1,0 +1,14 @@
+[package]
+name = "render_gl"
+version = "0.1.0"
+authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+
+[dependencies]
+render = { path = "../render" }
+gl-core-struct = { git = "https://github.com/Nercury/gl-core-struct-rs" }
+ffh = { path = "../ffh" }
+image = "0.15"
+resources = { path = "../resources" }
+sdl2 = "0.30"
+cgmath = "0.15"
+vec-2-10-10-10 = "0.1"

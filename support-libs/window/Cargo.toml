@@ -1,0 +1,8 @@
+[package]
+name = "window"
+version = "0.1.0"
+authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+publish = false
+
+[dependencies]
+resources = { path = "../resources" }

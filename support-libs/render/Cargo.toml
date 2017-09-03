@@ -1,0 +1,7 @@
+[package]
+name = "render"
+version = "0.1.0"
+authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+
+[dependencies]
+half = "1.0"
