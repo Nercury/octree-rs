@@ -2,6 +2,7 @@ extern crate bundler;
 
 use std::env;
 use std::path::PathBuf;
+use bundler::{Bundler, ActionConfig};
 
 pub fn main() {
     build_resources();
@@ -11,11 +12,16 @@ pub fn main() {
 fn build_resources() {
     println!("cargo:warning=running main build script");
 
-    bundler::bundle_from(&[
-        bundler::copy(&["res", "shader"], &["shader"]),
-        bundler::copy(&["res", "image"], &["image"]),
-    ]);
-    bundler::bundle_to(&[]);
+    let mut bundler = Bundler::default();
+
+    bundler.add_actions(&[
+        bundler::plugin::CopyConfig::new(&["res", "shader"], &["shader"]).boxed(),
+        bundler::plugin::CopyConfig::new(&["res", "image"], &["image"]).boxed(),
+    ])
+        .expect("failed to add actions");
+
+    bundler.set_target_rel_path(&[])
+        .expect("failed to bundle");
 }
 
 fn build_sdl() {
