@@ -1,7 +1,10 @@
 extern crate walkdir;
+extern crate crypto_hash;
+extern crate hex;
 
 mod state;
 mod error;
+mod util;
 pub mod plugin;
 pub mod env;
 
@@ -12,6 +15,7 @@ use std::io::{self, Read};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::fs::{self, DirBuilder, File};
+use hex::ToHex;
 
 pub trait ActionType {
     fn id(&self) -> &'static str;
@@ -21,24 +25,46 @@ pub trait ActionType {
 pub trait ActionConfig {
     fn type_id(&self) -> &'static str;
     fn boxed(self) -> Box<ActionConfig>;
+    fn config_hash(&self) -> &[u8];
 }
 
 pub struct Bundler {
+    crate_path: PathBuf,
     action_types: HashMap<&'static str, Box<ActionType>>,
 }
 
 impl Bundler {
+    pub fn new(crate_path: PathBuf) -> Bundler {
+        Bundler {
+            crate_path,
+            action_types: HashMap::new(),
+        }
+    }
+
     pub fn with_action_type<T: ActionType + 'static>(mut self, action: T) -> Self {
         self.action_types.insert(action.id(), action.boxed());
         self
     }
 
-    pub fn add_actions(&mut self, actions: &[Box<ActionConfig>]) -> Result<()> {
+    pub fn use_actions(&mut self, actions: &[Box<ActionConfig>]) -> Result<()> {
         let state = state::BundleState::new(&env::bundler_dir()?)?;
+
+        for action in actions {
+            let mut hasher = util::hash::new();
+            util::hash::write_path(&mut hasher, &self.crate_path);
+            util::hash::write_str(&mut hasher,action.type_id());
+            util::hash::write(&mut hasher,action.config_hash());
+            util::hash::write(&mut hasher,action.config_hash());
+
+            let crate_action_hash = hasher.finish();
+
+            println!("cargo:warning=action {:?} hash {:?}", action.type_id(), crate_action_hash.to_hex());
+        }
+
         Ok(())
     }
 
-    pub fn set_target_rel_path(&mut self, rel_path: &[&str]) -> Result<()> {
+    pub fn use_target_rel_path(&mut self, rel_path: &[&str]) -> Result<()> {
         let mut state = state::BundleState::new(&env::bundler_dir()?)?;
 
         let mut output_dir = env::target_dir()?.join(
@@ -59,6 +85,8 @@ impl Bundler {
 impl Default for Bundler {
     fn default() -> Self {
         Bundler {
+            crate_path: PathBuf::from(::std::env::var("CARGO_MANIFEST_DIR")
+                .expect("CARGO_MANIFEST_DIR env var for crate path was not set")),
             action_types: HashMap::new(),
         }
             .with_action_type(plugin::Copy::new())

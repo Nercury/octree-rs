@@ -14,13 +14,13 @@ fn build_resources() {
 
     let mut bundler = Bundler::default();
 
-    bundler.add_actions(&[
+    bundler.use_actions(&[
         bundler::plugin::CopyConfig::new(&["res", "shader"], &["shader"]).boxed(),
         bundler::plugin::CopyConfig::new(&["res", "image"], &["image"]).boxed(),
     ])
         .expect("failed to add actions");
 
-    bundler.set_target_rel_path(&[])
+    bundler.use_target_rel_path(&[])
         .expect("failed to bundle");
 }
 
