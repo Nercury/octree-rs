@@ -6,6 +6,7 @@ use std::env;
 pub enum Error {
     Io(io::Error),
     Env { message: String, err: Option<env::VarError> },
+    ActionTypeNotInitialized { type_id: String },
 }
 
 impl From<io::Error> for Error {

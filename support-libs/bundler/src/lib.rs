@@ -5,44 +5,33 @@ extern crate hex;
 mod state;
 mod error;
 mod util;
+mod action_types;
 pub mod plugin;
 pub mod env;
 
 pub use error::Error;
 pub use error::Result;
+pub use action_types::{ActionType, ActionConfig};
 
-use std::io::{self, Read};
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::fs::{self, DirBuilder, File};
+use std::path::{PathBuf};
 use hex::ToHex;
-
-pub trait ActionType {
-    fn id(&self) -> &'static str;
-    fn boxed(self) -> Box<ActionType>;
-}
-
-pub trait ActionConfig {
-    fn type_id(&self) -> &'static str;
-    fn boxed(self) -> Box<ActionConfig>;
-    fn config_hash(&self) -> &[u8];
-}
+use action_types::ActionTypes;
 
 pub struct Bundler {
     crate_path: PathBuf,
-    action_types: HashMap<&'static str, Box<ActionType>>,
+    action_types: ActionTypes,
 }
 
 impl Bundler {
     pub fn new(crate_path: PathBuf) -> Bundler {
         Bundler {
             crate_path,
-            action_types: HashMap::new(),
+            action_types: ActionTypes::new(),
         }
     }
 
     pub fn with_action_type<T: ActionType + 'static>(mut self, action: T) -> Self {
-        self.action_types.insert(action.id(), action.boxed());
+        self.action_types.insert(action);
         self
     }
 
@@ -50,13 +39,8 @@ impl Bundler {
         let state = state::BundleState::new(&env::bundler_dir()?)?;
 
         for action in actions {
-            let mut hasher = util::hash::new();
-            util::hash::write_path(&mut hasher, &self.crate_path);
-            util::hash::write_str(&mut hasher,action.type_id());
-            util::hash::write(&mut hasher,action.config_hash());
-            util::hash::write(&mut hasher,action.config_hash());
-
-            let crate_action_hash = hasher.finish();
+            let action_type = self.action_types.get(action.type_id())?;
+            let crate_action_hash = self.get_crate_action_hash(&**action);
 
             println!("cargo:warning=action {:?} hash {:?}", action.type_id(), crate_action_hash.to_hex());
         }
@@ -64,21 +48,37 @@ impl Bundler {
         Ok(())
     }
 
-    pub fn use_target_rel_path(&mut self, rel_path: &[&str]) -> Result<()> {
+    pub fn configure_output(&mut self, rel_path: Option<&[&str]>) -> Result<()> {
         let mut state = state::BundleState::new(&env::bundler_dir()?)?;
 
-        let mut output_dir = env::target_dir()?.join(
-            ::std::env::var("PROFILE")
-                .map_err(|e| Error::Env { message: "failed to find PROFILE env var".into(), err: Some(e) })?
-        );
+        let output_dir = match rel_path {
+            Some(rel_path) => {
+                let mut output_dir = env::target_dir()?.join(
+                    ::std::env::var("PROFILE")
+                        .map_err(|e| Error::Env { message: "failed to find PROFILE env var".into(), err: Some(e) })?
+                );
 
-        for path_part in rel_path {
-            output_dir = output_dir.join(path_part);
-        }
+                for path_part in rel_path {
+                    output_dir = output_dir.join(path_part);
+                }
 
-        state.set_target_path(&output_dir)?;
+                Some(output_dir)
+            },
+            None => None,
+        };
+
+        state.configure_output(state::OutputConfig { target_dir: output_dir })?;
 
         Ok(())
+    }
+
+    fn get_crate_action_hash(&self, action: &ActionConfig) -> Vec<u8> {
+        let mut hasher = util::hash::new();
+        util::hash::write_path(&mut hasher, &self.crate_path);
+        util::hash::write_str(&mut hasher,action.type_id());
+        util::hash::write(&mut hasher,action.config_hash());
+
+        hasher.finish()
     }
 }
 
@@ -87,7 +87,7 @@ impl Default for Bundler {
         Bundler {
             crate_path: PathBuf::from(::std::env::var("CARGO_MANIFEST_DIR")
                 .expect("CARGO_MANIFEST_DIR env var for crate path was not set")),
-            action_types: HashMap::new(),
+            action_types: ActionTypes::new(),
         }
             .with_action_type(plugin::Copy::new())
     }

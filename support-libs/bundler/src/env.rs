@@ -1,6 +1,6 @@
 use {Result, Error};
 use std::env;
-use std::path::{PathBuf, Path};
+use std::path::{PathBuf};
 
 pub fn bundler_dir() -> Result<PathBuf> {
     Ok(target_dir()?.join("bundler"))

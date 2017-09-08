@@ -20,7 +20,7 @@ fn build_resources() {
     ])
         .expect("failed to add actions");
 
-    bundler.use_target_rel_path(&[])
+    bundler.configure_output(Some(&[]))
         .expect("failed to bundle");
 }
 
