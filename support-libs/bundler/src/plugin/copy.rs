@@ -1,9 +1,8 @@
 use {ActionType, ActionConfig};
-use {Result, Error};
+use {Result};
 use util;
 use serde::{Deserialize, Serialize};
 use rmps::{Deserializer, Serializer};
-use std::any::Any;
 
 pub struct Copy;
 

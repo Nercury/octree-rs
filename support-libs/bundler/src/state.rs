@@ -1,13 +1,11 @@
 use std::path::{Path, PathBuf};
-use std::collections::HashMap;
-use action_types::ActionTypes;
 use Result;
 
 /// Represents current state of action output.
 pub struct ActionState {
     source_crate: String,
-    action_type: String,
-    serialized_options: String,
+    action_type_id: String,
+    serialized_config: Vec<u8>,
 }
 
 pub struct OutputConfig {

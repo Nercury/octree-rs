@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use {Error, Result};
-use std::any::Any;
 
 pub struct ActionTypes {
     types: HashMap<&'static str, Box<ActionType>>,
@@ -30,7 +29,7 @@ pub trait ActionType {
     fn deserialize_config(&self, data: &[u8]) -> Result<Box<ActionConfig>>;
 }
 
-pub trait ActionConfig: Any {
+pub trait ActionConfig {
     /// Id of action type that can use this configuration.
     fn type_id(&self) -> &'static str;
 
