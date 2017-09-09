@@ -1,6 +1,10 @@
 extern crate walkdir;
 extern crate crypto_hash;
 extern crate hex;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
+extern crate rmp_serde as rmps;
 
 mod state;
 mod error;
@@ -42,7 +46,10 @@ impl Bundler {
             let action_type = self.action_types.get(action.type_id())?;
             let crate_action_hash = self.get_crate_action_hash(&**action);
 
-            println!("cargo:warning=action {:?} hash {:?}", action.type_id(), crate_action_hash.to_hex());
+            println!("cargo:warning=action {:?} hash {:?}, serialized: {:?}",
+                     action.type_id(),
+                     crate_action_hash.to_hex(),
+                     String::from_utf8_lossy(&action.serialize()?));
         }
 
         Ok(())

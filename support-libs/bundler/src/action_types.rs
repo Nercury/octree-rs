@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use {Error, Result};
+use std::any::Any;
 
 pub struct ActionTypes {
     types: HashMap<&'static str, Box<ActionType>>,
@@ -26,9 +27,10 @@ impl ActionTypes {
 pub trait ActionType {
     fn id(&self) -> &'static str;
     fn boxed(self) -> Box<ActionType>;
+    fn deserialize_config(&self, data: &[u8]) -> Result<Box<ActionConfig>>;
 }
 
-pub trait ActionConfig {
+pub trait ActionConfig: Any {
     /// Id of action type that can use this configuration.
     fn type_id(&self) -> &'static str;
 
@@ -43,5 +45,7 @@ pub trait ActionConfig {
     /// As an example, a different file path might mean different action, while the compression
     /// algorithm option might indicate the same action, but with different parameters.
     fn config_hash(&self) -> &[u8];
+
+    fn serialize(&self) -> Result<Vec<u8>>;
 }
 

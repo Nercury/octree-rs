@@ -1,5 +1,9 @@
 use {ActionType, ActionConfig};
+use {Result, Error};
 use util;
+use serde::{Deserialize, Serialize};
+use rmps::{Deserializer, Serializer};
+use std::any::Any;
 
 pub struct Copy;
 
@@ -17,8 +21,15 @@ impl ActionType for Copy {
     fn boxed(self) -> Box<ActionType> {
         Box::new(self) as Box<ActionType>
     }
+
+    fn deserialize_config(&self, data: &[u8]) -> Result<Box<ActionConfig>> {
+        let mut de = Deserializer::new(data);
+        let res: CopyConfig = Deserialize::deserialize(&mut de)?;
+        Ok(Box::new(res) as Box<ActionConfig>)
+    }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CopyConfig {
     from_rel_dir: Vec<String>,
     to_rel_dir: Vec<String>,
@@ -28,8 +39,8 @@ pub struct CopyConfig {
 impl CopyConfig {
     pub fn new(from_rel_dir: &[&str], to_rel_dir: &[&str]) -> CopyConfig {
         let mut hasher = util::hash::new();
-        util::hash::write_slice_of_str(&mut hasher,from_rel_dir);
-        util::hash::write_slice_of_str(&mut hasher,to_rel_dir);
+        util::hash::write_slice_of_str(&mut hasher, from_rel_dir);
+        util::hash::write_slice_of_str(&mut hasher, to_rel_dir);
         let hash = hasher.finish();
 
         CopyConfig {
@@ -41,7 +52,6 @@ impl CopyConfig {
 }
 
 impl ActionConfig for CopyConfig {
-
     fn type_id(&self) -> &'static str {
         "copy"
     }
@@ -52,5 +62,11 @@ impl ActionConfig for CopyConfig {
 
     fn config_hash(&self) -> &[u8] {
         &self.action_hash[..]
+    }
+
+    fn serialize(&self) -> Result<Vec<u8>> {
+        let mut buf = Vec::new();
+        Serialize::serialize(self, &mut Serializer::new(&mut buf)).unwrap();
+        return Ok(buf);
     }
 }
