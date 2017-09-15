@@ -7,7 +7,7 @@ use rmps;
 pub enum Error {
     Io(io::Error),
     Env { message: String, err: Option<env::VarError> },
-    FilesActionNotInitialized { plugin_id: String },
+    PluginNotInitialized { plugin_type: &'static str, plugin_id: String },
     DeserializeConfig { message: String },
 }
 

@@ -31,7 +31,7 @@ impl Bundler {
     pub fn new(crate_path: PathBuf) -> Bundler {
         Bundler {
             crate_path,
-            files: Plugins::new(),
+            files: Plugins::new("files"),
         }
     }
 
