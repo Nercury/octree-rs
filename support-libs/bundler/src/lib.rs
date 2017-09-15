@@ -37,17 +37,24 @@ impl Bundler {
         self.files.insert(action.static_id(), Box::new(action) as Box<plugin::files::Plugin>);
     }
 
-    pub fn files(&mut self, actions: &[Box<plugin::files::Config>]) -> Result<()> {
+    pub fn files(&mut self, configs: &[Box<plugin::files::Config>]) -> Result<()> {
+        let crate_path = PathBuf::from(::std::env::var("CARGO_MANIFEST_DIR")
+            .expect("failed to find CARGO_MANIFEST_DIR env var"));
+
         let state = state::BundleState::new(&env::bundler_dir()?)?;
 
-        for action in actions {
-            let action_type = self.files.get(action.type_id())?;
-            let crate_action_hash = self.get_crate_action_hash(&**action);
+        for config in configs {
+            let plugin = self.files.get(config.type_id())?;
+            let crate_action_hash = self.get_crate_action_hash(&**config);
 
-            println!("cargo:warning=action {:?} hash {:?}, serialized: {:?}",
-                     action.type_id(),
+            println!("cargo:warning=config {:?} hash {:?}, serialized: {:?}",
+                     config.type_id(),
                      crate_action_hash.to_hex(),
-                     String::from_utf8_lossy(&action.serialize()?));
+                     String::from_utf8_lossy(&config.serialize()?));
+
+            for file in plugin.iter(&crate_path, &**config)? {
+                println!("cargo:warning=file {:?}", file?.path);
+            }
         }
 
         Ok(())

@@ -8,6 +8,7 @@ pub enum Error {
     Io(io::Error),
     Env { message: String, err: Option<env::VarError> },
     PluginNotInitialized { plugin_type: &'static str, plugin_id: String },
+    InvalidConfig { plugin_id: &'static str },
     DeserializeConfig { message: String },
 }
 
