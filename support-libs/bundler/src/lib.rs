@@ -24,7 +24,7 @@ use hex::ToHex;
 
 pub struct Bundler {
     crate_path: PathBuf,
-    files: Plugins<Box<plugin::Files>>,
+    files: Plugins<Box<plugin::files::Plugin>>,
 }
 
 impl Bundler {
@@ -35,11 +35,11 @@ impl Bundler {
         }
     }
 
-    pub fn insert_files_plugin<T: StaticId + plugin::Files + 'static>(&mut self, action: T) {
-        self.files.insert(action.static_id(), Box::new(action) as Box<plugin::Files>);
+    pub fn insert_files_plugin<T: StaticId + plugin::files::Plugin + 'static>(&mut self, action: T) {
+        self.files.insert(action.static_id(), Box::new(action) as Box<plugin::files::Plugin>);
     }
 
-    pub fn files(&mut self, actions: &[Box<plugin::FilesConfig>]) -> Result<()> {
+    pub fn files(&mut self, actions: &[Box<plugin::files::Config>]) -> Result<()> {
         let state = state::BundleState::new(&env::bundler_dir()?)?;
 
         for action in actions {
@@ -79,7 +79,7 @@ impl Bundler {
         Ok(())
     }
 
-    fn get_crate_action_hash(&self, action: &plugin::FilesConfig) -> Vec<u8> {
+    fn get_crate_action_hash(&self, action: &plugin::files::Config) -> Vec<u8> {
         let mut hasher = util::hash::new();
         util::hash::write_path(&mut hasher, &self.crate_path);
         util::hash::write_str(&mut hasher, action.type_id());

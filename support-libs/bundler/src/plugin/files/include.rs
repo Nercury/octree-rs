@@ -26,7 +26,7 @@ impl Config {
     }
 }
 
-impl plugin::FilesConfig for Config {
+impl plugin::files::Config for Config {
     fn type_id(&self) -> &'static str {
         "include"
     }
@@ -56,11 +56,11 @@ impl StaticId for Action {
     }
 }
 
-impl plugin::Files for Action {
-    fn deserialize_config(&self, data: &[u8]) -> Result<Box<plugin::FilesConfig>> {
+impl plugin::files::Plugin for Action {
+    fn deserialize_config(&self, data: &[u8]) -> Result<Box<plugin::files::Config>> {
         let mut de = Deserializer::new(data);
         let res: Config = Deserialize::deserialize(&mut de)?;
-        Ok(Box::new(res) as Box<plugin::FilesConfig>)
+        Ok(Box::new(res) as Box<plugin::files::Config>)
     }
 }
 

@@ -3,7 +3,7 @@ extern crate bundler;
 use std::env;
 use std::path::PathBuf;
 use bundler::{Bundler};
-use bundler::plugin::include;
+use bundler::plugin::files::include;
 
 pub fn main() {
     build_resources();
