@@ -1,48 +1,24 @@
-use {ActionType, ActionConfig};
-use {Result};
+use {StaticId, Result, Bundler};
 use util;
+use plugin;
 use serde::{Deserialize, Serialize};
 use rmps::{Deserializer, Serializer};
 
-pub struct Copy;
-
-impl Copy {
-    pub fn new() -> Copy {
-        Copy
-    }
-}
-
-impl ActionType for Copy {
-    fn id(&self) -> &'static str {
-        "copy"
-    }
-
-    fn boxed(self) -> Box<ActionType> {
-        Box::new(self) as Box<ActionType>
-    }
-
-    fn deserialize_config(&self, data: &[u8]) -> Result<Box<ActionConfig>> {
-        let mut de = Deserializer::new(data);
-        let res: CopyConfig = Deserialize::deserialize(&mut de)?;
-        Ok(Box::new(res) as Box<ActionConfig>)
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug)]
-pub struct CopyConfig {
+pub struct Config {
     from_rel_dir: Vec<String>,
     to_rel_dir: Vec<String>,
     action_hash: Vec<u8>,
 }
 
-impl CopyConfig {
-    pub fn new(from_rel_dir: &[&str], to_rel_dir: &[&str]) -> CopyConfig {
+impl Config {
+    pub fn new(from_rel_dir: &[&str], to_rel_dir: &[&str]) -> Config {
         let mut hasher = util::hash::new();
         util::hash::write_slice_of_str(&mut hasher, from_rel_dir);
         util::hash::write_slice_of_str(&mut hasher, to_rel_dir);
         let hash = hasher.finish();
 
-        CopyConfig {
+        Config {
             from_rel_dir: from_rel_dir.iter().map(|s| s.to_string()).collect(),
             to_rel_dir: to_rel_dir.iter().map(|s| s.to_string()).collect(),
             action_hash: hash,
@@ -50,13 +26,9 @@ impl CopyConfig {
     }
 }
 
-impl ActionConfig for CopyConfig {
+impl plugin::FilesConfig for Config {
     fn type_id(&self) -> &'static str {
-        "copy"
-    }
-
-    fn boxed(self) -> Box<ActionConfig> {
-        Box::new(self) as Box<ActionConfig>
+        "include"
     }
 
     fn config_hash(&self) -> &[u8] {
@@ -68,4 +40,30 @@ impl ActionConfig for CopyConfig {
         Serialize::serialize(self, &mut Serializer::new(&mut buf)).unwrap();
         return Ok(buf);
     }
+}
+
+struct Action;
+
+impl Action {
+    pub fn new() -> Action {
+        Action
+    }
+}
+
+impl StaticId for Action {
+    fn static_id(&self) -> &'static str {
+        "include"
+    }
+}
+
+impl plugin::Files for Action {
+    fn deserialize_config(&self, data: &[u8]) -> Result<Box<plugin::FilesConfig>> {
+        let mut de = Deserializer::new(data);
+        let res: Config = Deserialize::deserialize(&mut de)?;
+        Ok(Box::new(res) as Box<plugin::FilesConfig>)
+    }
+}
+
+pub fn init(bundler: &mut Bundler) {
+    bundler.insert_files_plugin(Action::new());
 }

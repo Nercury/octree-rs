@@ -9,41 +9,41 @@ extern crate rmp_serde as rmps;
 mod state;
 mod error;
 mod util;
-mod action_types;
+mod plugins;
 pub mod plugin;
 pub mod env;
 
 pub use error::Error;
 pub use error::Result;
-pub use action_types::{ActionType, ActionConfig};
 
-use std::path::{PathBuf};
+pub use plugins::StaticId;
+use plugins::Plugins;
+
+use std::path::PathBuf;
 use hex::ToHex;
-use action_types::ActionTypes;
 
 pub struct Bundler {
     crate_path: PathBuf,
-    action_types: ActionTypes,
+    files: Plugins<Box<plugin::Files>>,
 }
 
 impl Bundler {
     pub fn new(crate_path: PathBuf) -> Bundler {
         Bundler {
             crate_path,
-            action_types: ActionTypes::new(),
+            files: Plugins::new(),
         }
     }
 
-    pub fn with_action_type<T: ActionType + 'static>(mut self, action: T) -> Self {
-        self.action_types.insert(action);
-        self
+    pub fn insert_files_plugin<T: StaticId + plugin::Files + 'static>(&mut self, action: T) {
+        self.files.insert(action.static_id(), Box::new(action) as Box<plugin::Files>);
     }
 
-    pub fn use_actions(&mut self, actions: &[Box<ActionConfig>]) -> Result<()> {
+    pub fn files(&mut self, actions: &[Box<plugin::FilesConfig>]) -> Result<()> {
         let state = state::BundleState::new(&env::bundler_dir()?)?;
 
         for action in actions {
-            let action_type = self.action_types.get(action.type_id())?;
+            let action_type = self.files.get(action.type_id())?;
             let crate_action_hash = self.get_crate_action_hash(&**action);
 
             println!("cargo:warning=action {:?} hash {:?}, serialized: {:?}",
@@ -70,7 +70,7 @@ impl Bundler {
                 }
 
                 Some(output_dir)
-            },
+            }
             None => None,
         };
 
@@ -79,11 +79,11 @@ impl Bundler {
         Ok(())
     }
 
-    fn get_crate_action_hash(&self, action: &ActionConfig) -> Vec<u8> {
+    fn get_crate_action_hash(&self, action: &plugin::FilesConfig) -> Vec<u8> {
         let mut hasher = util::hash::new();
         util::hash::write_path(&mut hasher, &self.crate_path);
-        util::hash::write_str(&mut hasher,action.type_id());
-        util::hash::write(&mut hasher,action.config_hash());
+        util::hash::write_str(&mut hasher, action.type_id());
+        util::hash::write(&mut hasher, action.config_hash());
 
         hasher.finish()
     }
@@ -91,12 +91,10 @@ impl Bundler {
 
 impl Default for Bundler {
     fn default() -> Self {
-        Bundler {
-            crate_path: PathBuf::from(::std::env::var("CARGO_MANIFEST_DIR")
-                .expect("CARGO_MANIFEST_DIR env var for crate path was not set")),
-            action_types: ActionTypes::new(),
-        }
-            .with_action_type(plugin::Copy::new())
+        Bundler::new(
+            PathBuf::from(::std::env::var("CARGO_MANIFEST_DIR")
+                .expect("CARGO_MANIFEST_DIR env var for crate path was not set"))
+        )
     }
 }
 
