@@ -82,35 +82,21 @@ impl plugin::files::Plugin for Plugin {
             from_abs_dir = from_abs_dir.join(item);
         }
 
-        Ok(Box::new(Iter {
-            from_abs_dir: from_abs_dir.clone(),
-            inner: walkdir::WalkDir::new(from_abs_dir).into_iter(),
-        }))
+        Ok(Box::new(
+            walkdir::WalkDir::new(from_abs_dir).into_iter()
+                .map(|e| match e {
+                    Ok(entry) => Ok(plugin::files::File {
+                        read: None,
+                        timestamp: None,
+                        copy: None,
+                        path: entry.path().into(),
+                    }),
+                    Err(e) => Err(e.into()),
+                })
+        ))
     }
 }
 
 pub fn init(bundler: &mut Bundler) {
     bundler.insert_files_plugin(Plugin::new());
-}
-
-struct Iter {
-    from_abs_dir: PathBuf,
-    inner: walkdir::Iter,
-}
-
-impl Iterator for Iter {
-    type Item = io::Result<plugin::files::File>;
-
-    fn next(&mut self) -> Option<io::Result<plugin::files::File>> {
-        match self.inner.next() {
-            Some(Ok(entry)) => Some(Ok(plugin::files::File {
-                read: None,
-                timestamp: None,
-                copy: None,
-                path: entry.path().into(),
-            })),
-            None => None,
-            Some(Err(e)) => Some(Err(e.into())),
-        }
-    }
 }
