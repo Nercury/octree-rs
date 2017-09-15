@@ -9,29 +9,27 @@ extern crate rmp_serde as rmps;
 mod state;
 mod error;
 mod util;
-mod plugins;
 pub mod plugin;
 pub mod env;
 
 pub use error::Error;
 pub use error::Result;
 
-pub use plugins::StaticId;
-use plugins::Plugins;
+pub use plugin::StaticId;
 
 use std::path::PathBuf;
 use hex::ToHex;
 
 pub struct Bundler {
     crate_path: PathBuf,
-    files: Plugins<Box<plugin::files::Plugin>>,
+    files: plugin::Set<Box<plugin::files::Plugin>>,
 }
 
 impl Bundler {
     pub fn new(crate_path: PathBuf) -> Bundler {
         Bundler {
             crate_path,
-            files: Plugins::new("files"),
+            files: plugin::Set::new("files"),
         }
     }
 
