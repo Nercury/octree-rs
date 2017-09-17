@@ -1,4 +1,5 @@
-use {StaticId, Result, Error, Bundler};
+use error::{Error, Result};
+use Bundler;
 use util;
 use plugin;
 use serde::{Deserialize, Serialize};
@@ -32,7 +33,7 @@ impl Config {
     }
 }
 
-impl plugin::files::Config for Config {
+impl plugin::input::Config for Config {
     fn any(&self) -> &Any {
         self as &Any
     }
@@ -60,20 +61,20 @@ impl Plugin {
     }
 }
 
-impl StaticId for Plugin {
+impl plugin::StaticId for Plugin {
     fn static_id(&self) -> &'static str {
         PLUGIN_ID
     }
 }
 
-impl plugin::files::Plugin for Plugin {
-    fn deserialize_config(&self, data: &[u8]) -> Result<Box<plugin::files::Config>> {
+impl plugin::input::Plugin for Plugin {
+    fn deserialize_config(&self, data: &[u8]) -> Result<Box<plugin::input::Config>> {
         let mut de = Deserializer::new(data);
         let res: Config = Deserialize::deserialize(&mut de)?;
-        Ok(Box::new(res) as Box<plugin::files::Config>)
+        Ok(Box::new(res) as Box<plugin::input::Config>)
     }
 
-    fn iter(&self, crate_path: &Path, config: &plugin::files::Config) -> Result<Box<Iterator<Item=io::Result<plugin::files::File>>>> {
+    fn iter(&self, config: &plugin::Config, crate_path: &Path) -> Result<Box<Iterator<Item=io::Result<Box<plugin::input::File>>>>> {
         let config: &Config = config.any().downcast_ref::<Config>()
             .ok_or_else(|| Error::InvalidConfig { plugin_id: PLUGIN_ID })?;
 
@@ -82,18 +83,38 @@ impl plugin::files::Plugin for Plugin {
             from_abs_dir = from_abs_dir.join(item);
         }
 
+        let walkdir = walkdir::WalkDir::new(from_abs_dir);
+
         Ok(Box::new(
-            walkdir::WalkDir::new(from_abs_dir).into_iter()
-                .map(|e| match e {
-                    Ok(entry) => Ok(plugin::files::File {
-                        read: None,
-                        timestamp: None,
-                        copy: None,
-                        path: entry.path().into(),
-                    }),
-                    Err(e) => Err(e.into()),
-                })
+            walkdir.into_iter()
+                .filter(|e| e
+                    .as_ref()
+                    .map(|e| e.file_type().is_file())
+                    .unwrap_or(false)
+                )
+                .map(|item| item
+                    .map(|entry| Box::new(entry) as Box<plugin::File>)
+                    .map_err(|e| e.into())
+                )
         ))
+    }
+}
+
+impl plugin::File for walkdir::DirEntry {
+    fn path(&self) -> &Path {
+        self.path()
+    }
+
+    fn read(&self) -> Option<Box<plugin::ReadFile>> {
+        None
+    }
+
+    fn copy(&self) -> Option<Box<plugin::CopyFile>> {
+        None
+    }
+
+    fn timestamp(&self) -> Option<io::Result<u64>> {
+        None
     }
 }
 

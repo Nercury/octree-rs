@@ -6,23 +6,19 @@ extern crate serde_derive;
 extern crate serde;
 extern crate rmp_serde as rmps;
 
+mod builder;
 mod state;
 mod error;
 mod util;
 pub mod plugin;
 pub mod env;
 
-pub use error::Error;
-pub use error::Result;
-
-pub use plugin::StaticId;
-
 use std::path::PathBuf;
 use hex::ToHex;
 
 pub struct Bundler {
     crate_path: PathBuf,
-    files: plugin::Set<Box<plugin::files::Plugin>>,
+    files: plugin::Set<Box<plugin::input::Plugin>>,
 }
 
 impl Bundler {
@@ -33,15 +29,15 @@ impl Bundler {
         }
     }
 
-    pub fn insert_files_plugin<T: StaticId + plugin::files::Plugin + 'static>(&mut self, action: T) {
-        self.files.insert(action.static_id(), Box::new(action) as Box<plugin::files::Plugin>);
+    pub fn insert_files_plugin<T: plugin::StaticId + plugin::input::Plugin + 'static>(&mut self, action: T) {
+        self.files.insert(action.static_id(), Box::new(action) as Box<plugin::input::Plugin>);
     }
 
-    pub fn files(&mut self, configs: &[Box<plugin::files::Config>]) -> Result<()> {
+    pub fn input(&mut self, configs: &[Box<plugin::Config>]) -> error::Result<()> {
         let crate_path = PathBuf::from(::std::env::var("CARGO_MANIFEST_DIR")
             .expect("failed to find CARGO_MANIFEST_DIR env var"));
 
-        let state = state::BundleState::new(&env::bundler_dir()?)?;
+        let _state = state::BundleState::new(&env::bundler_dir()?)?;
 
         for config in configs {
             let plugin = self.files.get(config.type_id())?;
@@ -52,22 +48,22 @@ impl Bundler {
                      crate_action_hash.to_hex(),
                      String::from_utf8_lossy(&config.serialize()?));
 
-            for file in plugin.iter(&crate_path, &**config)? {
-                println!("cargo:warning=file {:?}", file?.path);
+            for file in plugin.iter(&**config, &crate_path)? {
+                println!("cargo:warning=file {:?}", file?.path());
             }
         }
 
         Ok(())
     }
 
-    pub fn configure_output(&mut self, rel_path: Option<&[&str]>) -> Result<()> {
+    pub fn configure_output(&mut self, rel_path: Option<&[&str]>) -> error::Result<()> {
         let mut state = state::BundleState::new(&env::bundler_dir()?)?;
 
         let output_dir = match rel_path {
             Some(rel_path) => {
                 let mut output_dir = env::target_dir()?.join(
                     ::std::env::var("PROFILE")
-                        .map_err(|e| Error::Env { message: "failed to find PROFILE env var".into(), err: Some(e) })?
+                        .map_err(|e| error::Error::Env { message: "failed to find PROFILE env var".into(), err: Some(e) })?
                 );
 
                 for path_part in rel_path {
@@ -84,7 +80,7 @@ impl Bundler {
         Ok(())
     }
 
-    fn get_crate_action_hash(&self, action: &plugin::files::Config) -> Vec<u8> {
+    fn get_crate_action_hash(&self, action: &plugin::Config) -> Vec<u8> {
         let mut hasher = util::hash::new();
         util::hash::write_path(&mut hasher, &self.crate_path);
         util::hash::write_str(&mut hasher, action.type_id());

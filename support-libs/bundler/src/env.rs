@@ -1,4 +1,4 @@
-use {Result, Error};
+use error::{Result, Error};
 use std::env;
 use std::path::{PathBuf};
 

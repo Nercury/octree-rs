@@ -3,7 +3,7 @@ extern crate bundler;
 use std::env;
 use std::path::PathBuf;
 use bundler::{Bundler};
-use bundler::plugin::files::include;
+use bundler::plugin::input::include;
 
 pub fn main() {
     build_resources();
@@ -16,7 +16,7 @@ fn build_resources() {
     let mut bundler = Bundler::default();
     include::init(&mut bundler);
 
-    bundler.files(&[
+    bundler.input(&[
         Box::new(include::Config::new(&["res", "shader"], &["shader"])),
         Box::new(include::Config::new(&["res", "image"], &["image"])),
     ])

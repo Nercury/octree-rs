@@ -1,5 +1,15 @@
 use std::path::{Path, PathBuf};
-use Result;
+use plugin;
+use error::Result;
+
+pub struct InputPipelines {
+    pipelines: Vec<InputPipeline>,
+}
+
+pub struct InputPipeline {
+    input: Vec<Box<plugin::Config>>,
+    process: Vec<Box<plugin::Config>>,
+}
 
 /// Represents current state of action output.
 pub struct ActionState {
